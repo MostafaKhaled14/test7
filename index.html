@@ -154,7 +154,16 @@
       zoomImage.addEventListener("touchmove", (event) => {
         event.preventDefault();
 
-        if (isDragging && event.touches.length === 1 && zoomLevel > 1) {
+        if (event.touches.length === 2) {
+          const firstFinger = event.touches[0];
+          const secondFinger = event.touches[1];
+          const newDistance = Math.hypot(
+            firstFinger.clientX - secondFinger.clientX,
+            firstFinger.clientY - secondFinger.clientY
+          );
+
+          zoomLevel = Math.min(Math.max(1, (newDistance / startDistance) * startZoomLevel), 4);
+        } else if (isDragging && event.touches.length === 1 && zoomLevel > 1) {
           positionX = event.touches[0].clientX - startTouchX;
           positionY = event.touches[0].clientY - startTouchY;
         }
