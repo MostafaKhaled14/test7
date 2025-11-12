@@ -8,8 +8,6 @@
     <link rel="stylesheet" href="CSS/bootstrap.min.css">
     <link rel="stylesheet" href="CSS/all.min.css">
     <link rel="stylesheet" href="CSS/style.css">
-    <link rel="stylesheet" href="CSS/custom.css">
-    <link rel="stylesheet" href="CSS/font-icon.css">
 </head>
 
 <body>
@@ -142,7 +140,7 @@ let zoomLevel = 1;
 organizationalStructureIcon.addEventListener("click", () => {
   popup.classList.add("active");
   organizationalStructureIcon.classList.add("active");
-    // document.body.style.overflow = "hidden"; 
+    document.body.style.overflow = "hidden"; 
 
 });
 
@@ -153,7 +151,7 @@ popup.addEventListener("click", (e) => {
     organizationalStructureIcon.classList.remove("active");
     zoomLevel = 1;
     zoomedImg.style.transform = `scale(${zoomLevel})`;
-        // document.body.style.overflow = ""; 
+        document.body.style.overflow = ""; 
 
   }
 });
@@ -179,12 +177,12 @@ popup.addEventListener("touchend", () => {
 });
 
 
-zoomedImg.addEventListener("wheel", (e) => {
-  e.preventDefault();
-  zoomLevel += e.deltaY * -0.04;  // تكبير أو تصغير
-  zoomLevel = Math.min(Math.max(1, zoomLevel), 3);
-  zoomedImg.style.transform = `scale(${zoomLevel})`;
-});
+// zoomedImg.addEventListener("wheel", (e) => {
+//   e.preventDefault();
+//   zoomLevel += e.deltaY * -0.04;
+//   zoomLevel = Math.min(Math.max(1, zoomLevel), 3);
+//   zoomedImg.style.transform = `scale(${zoomLevel})`;
+// });
 
 
     </script>
