@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="CSS/bootstrap.min.css" />
     <link rel="stylesheet" href="CSS/all.min.css" />
     <style>
-      .organizational-structure-icon {
+      .zoom-icon {
         position: absolute;
         bottom: 12px;
         right: 25px;
@@ -19,10 +19,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: 0.3s;
         z-index: 10;
+        transition: 0.3s;
       }
-      .organizational-structure-icon:hover {
+
+      .zoom-icon:hover {
         background: white;
         color: green;
       }
@@ -30,38 +31,39 @@
       .overlay {
         position: fixed;
         inset: 0;
+        background: rgba(0, 0, 0, 0.7);
         display: none;
         align-items: center;
         justify-content: center;
-        background: rgba(0, 0, 0, 0.7);
         z-index: 9999;
       }
+
       .overlay.active {
         display: flex;
       }
 
-      .popup-content {
-        position: relative;
+      .popup {
         width: 95%;
         height: 95%;
         background: white;
         border-radius: 8px;
-        overflow: hidden;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
       }
-      .popup-content .close-btn {
+
+      .close-button {
         text-align: right;
         padding: 16px;
       }
 
-      .zoom-container {
+      .zoom-area {
         flex: 1;
         overflow: hidden;
         touch-action: none;
       }
 
-      .zoomed-image {
+      .zoom-image {
         width: 100%;
         height: 100%;
         object-fit: contain;
@@ -70,30 +72,29 @@
       }
     </style>
   </head>
+
   <body>
     <section class="mof-organizational-structure py-5">
       <div class="container position-relative">
-        <div class="organizational-structure-image">
-          <img
-            src="./img/organizational-structure.jpg"
-            alt="organizational-structure"
-            style="width: 100%; aspect-ratio: 4/2.9; object-fit: cover"
-          />
-        </div>
+        <img
+          src="./img/organizational-structure.jpg"
+          alt="organizational-structure"
+          style="width: 100%; aspect-ratio: 4/2.9; object-fit: cover"
+        />
 
-        <div class="organizational-structure-icon d-md-none" id="open-zoom">
+        <div class="zoom-icon d-md-none" id="openZoom">
           <i class="fa fa-link"></i>
         </div>
 
         <div class="overlay" id="overlay">
-          <div class="popup-content">
-            <div class="close-btn"><i class="fa fa-close"></i></div>
-            <div class="zoom-container">
+          <div class="popup">
+            <div class="close-button"><i class="fa fa-close"></i></div>
+            <div class="zoom-area">
               <img
-                class="zoomed-image"
-                id="zoomedImage"
                 src="./img/organizational-structure.jpg"
-                alt="zoomed-image"
+                class="zoom-image"
+                id="zoomImage"
+                alt="zoomed image"
               />
             </div>
           </div>
@@ -102,65 +103,68 @@
     </section>
 
     <script>
-      const openBtn = document.getElementById("open-zoom");
+      const openZoomButton = document.getElementById("openZoom");
       const overlay = document.getElementById("overlay");
-      const img = document.getElementById("zoomedImage");
-      const closeBtn = overlay.querySelector(".close-btn");
+      const zoomImage = document.getElementById("zoomImage");
+      const closeButton = overlay.querySelector(".close-button");
 
-      let scale = 1,
-        posX = 0,
-        posY = 0,
-        startDist = 0,
-        startScale = 1,
-        startX = 0,
-        startY = 0,
-        isDragging = false;
+      let zoomLevel = 1;
+      let positionX = 0;
+      let positionY = 0;
+      let startDistance = 0;
+      let startZoomLevel = 1;
+      let startTouchX = 0;
+      let startTouchY = 0;
+      let isDragging = false;
 
-      openBtn.addEventListener("click", () => {
+      openZoomButton.addEventListener("click", () => {
         overlay.classList.add("active");
         document.body.style.overflow = "hidden";
       });
 
-      closeBtn.addEventListener("click", () => {
+      closeButton.addEventListener("click", () => {
         overlay.classList.remove("active");
         document.body.style.overflow = "";
         resetImage();
       });
 
       function resetImage() {
-        scale = 1;
-        posX = posY = 0;
-        img.style.transform = `translate(0,0) scale(1)`;
+        zoomLevel = 1;
+        positionX = 0;
+        positionY = 0;
+        zoomImage.style.transform = `translate(0, 0) scale(1)`;
       }
 
-      img.addEventListener("touchstart", (e) => {
-        if (e.touches.length === 2) {
-          const [a, b] = e.touches;
-          startDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-          startScale = scale;
-        } else if (e.touches.length === 1 && scale > 1) {
+      zoomImage.addEventListener("touchstart", (event) => {
+        if (event.touches.length === 2) {
+          const firstFinger = event.touches[0];
+          const secondFinger = event.touches[1];
+          startDistance = Math.hypot(
+            firstFinger.clientX - secondFinger.clientX,
+            firstFinger.clientY - secondFinger.clientY
+          );
+          startZoomLevel = zoomLevel;
+        } else if (event.touches.length === 1 && zoomLevel > 1) {
           isDragging = true;
-          startX = e.touches[0].clientX - posX;
-          startY = e.touches[0].clientY - posY;
+          startTouchX = event.touches[0].clientX - positionX;
+          startTouchY = event.touches[0].clientY - positionY;
         }
       });
 
-      img.addEventListener("touchmove", (e) => {
-        e.preventDefault();
-        if (e.touches.length === 2) {
-          const [a, b] = e.touches;
-          const newDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-          scale = Math.min(Math.max(1, (newDist / startDist) * startScale), 4);
-        } else if (isDragging && e.touches.length === 1 && scale > 1) {
-          posX = e.touches[0].clientX - startX;
-          posY = e.touches[0].clientY - startY;
+      zoomImage.addEventListener("touchmove", (event) => {
+        event.preventDefault();
+
+        if (isDragging && event.touches.length === 1 && zoomLevel > 1) {
+          positionX = event.touches[0].clientX - startTouchX;
+          positionY = event.touches[0].clientY - startTouchY;
         }
-        img.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+
+        zoomImage.style.transform = `translate(${positionX}px, ${positionY}px) scale(${zoomLevel})`;
       });
 
-      img.addEventListener("touchend", () => {
+      zoomImage.addEventListener("touchend", () => {
         isDragging = false;
-        if (scale === 1) resetImage(); // الصورة ترجع مكانها الطبيعي
+        if (zoomLevel === 1) resetImage();
       });
     </script>
   </body>
