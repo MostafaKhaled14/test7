@@ -1,197 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mobile Zoom Popup</title>
-  <link rel="stylesheet" href="CSS/bootstrap.min.css" />
-  <style>
-    body {
-      margin: 0;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zoom Image</title>
+    <link rel="stylesheet" href="CSS/bootstrap.min.css" />
+    <link rel="stylesheet" href="CSS/all.min.css" />
+    <style>
+      .zoom-icon {
+        position: absolute;
+        bottom: 12px;
+        right: 25px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: green;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        transition: 0.3s;
+      }
 
-    .container {
-      position: relative;
-      max-width: 600px;
-      margin: auto;
-    }
+      .zoom-icon:hover {
+        background: white;
+        color: green;
+      }
 
-    .organizational-structure-image img {
-      width: 100%;
-      object-fit: cover;
-      border-radius: 8px;
-    }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
 
-    .open-popup-icon {
-      position: absolute;
-      bottom: 12px;
-      right: 12px;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: green;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 20px;
-      z-index: 10;
-    }
+      .overlay.active {
+        display: flex;
+      }
 
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
+      .popup {
+        width: 95%;
+        height: 95%;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
 
-    .overlay.active {
-      display: flex;
-    }
+      .close-button {
+        text-align: right;
+        padding: 16px;
+      }
 
-    .popup-content {
-      position: relative;
-      width: 95%;
-      height: 95%;
-      background-color: white;
-      border-radius: 8px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
+      .zoom-area {
+        flex: 1;
+        overflow: hidden;
+        touch-action: none;
+      }
 
-    .close-btn {
-      display: flex;
-      justify-content: flex-end;
-      padding: 16px;
-      font-size: 24px;
-      cursor: pointer;
-    }
+      .zoom-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transform-origin: center center;
+        transition: transform 0.1s linear;
+      }
+    </style>
+  </head>
 
-    .zoom-container {
-      flex: 1;
-      overflow: hidden;
-      touch-action: none; /* مهم للتحكم باللمس */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+  <body>
+    <section class="mof-organizational-structure py-5">
+      <div class="container position-relative">
+        <img src="./img/organizational-structure.jpg" alt="organizational-structure" style="width: 100%; aspect-ratio: 4/2.9; object-fit: cover" />
 
-    .zoomable-image {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      transform-origin: center center;
-      transition: transform 0.05s linear;
-      touch-action: none;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="organizational-structure-image">
-      <img src="./img/organizational-structure.jpg" alt="organizational-structure" />
-    </div>
+        <div class="zoom-icon d-md-none" id="openZoom">
+          <i class="fa fa-link"></i>
+        </div>
 
-    <div class="open-popup-icon" id="openPopup">
-      +
-    </div>
-
-    <div class="overlay" id="popupOverlay">
-      <div class="popup-content">
-        <div class="close-btn" id="closePopup">&times;</div>
-        <div class="zoom-container">
-          <img src="./img/organizational-structure.jpg" alt="zoomed" class="zoomable-image" />
+        <div class="overlay" id="overlay">
+          <div class="popup">
+            <div class="close-button"><i class="fa fa-close"></i></div>
+            <div class="zoom-area">
+              <img src="./img/organizational-structure.jpg" class="zoom-image" id="zoomImage" alt="zoomed image" />
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <script>
-    const openPopupButton = document.getElementById("openPopup");
-    const overlay = document.getElementById("popupOverlay");
-    const closePopupButton = document.getElementById("closePopup");
-    const zoomableImage = overlay.querySelector(".zoomable-image");
+    <script>
+      const openZoomButton = document.getElementById("openZoom");
+      const overlay = document.getElementById("overlay");
+      const zoomImage = document.getElementById("zoomImage");
+      const closeButton = overlay.querySelector(".close-button");
 
-    let currentScale = 1;
-    let moveX = 0;
-    let moveY = 0;
-    let startX = 0;
-    let startY = 0;
-    let isDragging = false;
-    let initialDistance = 0;
-    let initialScale = 1;
+      let zoomLevel = 1;
+      let positionX = 0;
+      let positionY = 0;
+      let startDistance = 0;
+      let startZoomLevel = 1;
+      let startTouchX = 0;
+      let startTouchY = 0;
+      let isDragging = false;
 
-    // فتح البوب أب
-    openPopupButton.addEventListener("click", () => {
-      overlay.classList.add("active");
-      document.body.style.overflow = "hidden";
-    });
+      openZoomButton.addEventListener("click", () => {
+        overlay.classList.add("active");
+        document.body.style.overflow = "hidden";
+      });
 
-    // غلق البوب أب
-    closePopupButton.addEventListener("click", () => {
-      overlay.classList.remove("active");
-      resetZoom();
-    });
-
-    overlay.addEventListener("click", (event) => {
-      if (event.target === overlay) {
+      closeButton.addEventListener("click", () => {
         overlay.classList.remove("active");
-        resetZoom();
-      }
-    });
+        document.body.style.overflow = "";
+      });
 
-    function resetZoom() {
-      currentScale = 1;
-      moveX = 0;
-      moveY = 0;
-      zoomableImage.style.transform = `translate(0px, 0px) scale(1)`;
-      document.body.style.overflow = "";
-    }
-
-    // التعامل مع اللمس
-    zoomableImage.addEventListener("touchstart", (event) => {
-      if (event.touches.length === 2) {
-        isDragging = false;
-        const dx = event.touches[0].clientX - event.touches[1].clientX;
-        const dy = event.touches[0].clientY - event.touches[1].clientY;
-        initialDistance = Math.hypot(dx, dy);
-        initialScale = currentScale;
-      } else if (event.touches.length === 1 && currentScale > 1) {
-        isDragging = true;
-        startX = event.touches[0].clientX - moveX;
-        startY = event.touches[0].clientY - moveY;
-      }
-    });
-
-    zoomableImage.addEventListener("touchmove", (event) => {
-      event.preventDefault();
-
-      if (event.touches.length === 2) {
-        const dx = event.touches[0].clientX - event.touches[1].clientX;
-        const dy = event.touches[0].clientY - event.touches[1].clientY;
-        const distance = Math.hypot(dx, dy);
-        const scaleChange = distance / initialDistance;
-        currentScale = Math.min(Math.max(1, initialScale * scaleChange), 4);
-      } else if (event.touches.length === 1 && isDragging) {
-        moveX = event.touches[0].clientX - startX;
-        moveY = event.touches[0].clientY - startY;
+      function getDistanceBetweenFingers(touches) {
+        const finger1 = touches[0];
+        const finger2 = touches[1];
+        return Math.hypot(finger1.clientX - finger2.clientX, finger1.clientY - finger2.clientY);
       }
 
-      zoomableImage.style.transform = `translate(${moveX}px, ${moveY}px) scale(${currentScale})`;
-    });
+      zoomImage.addEventListener("touchstart", (event) => {
+        if (event.touches.length === 2) {
+          startDistance = getDistanceBetweenFingers(event.touches);
+          startZoomLevel = zoomLevel;
+        } else if (event.touches.length === 1 && zoomLevel > 1) {
+          isDragging = true;
+          startTouchX = event.touches[0].clientX - positionX;
+          startTouchY = event.touches[0].clientY - positionY;
+        }
+      });
 
-    zoomableImage.addEventListener("touchend", () => {
-      if (currentScale === 1) {
-        moveX = 0;
-        moveY = 0;
-        zoomableImage.style.transform = `translate(0px, 0px) scale(1)`;
-      }
-      isDragging = false;
-    });
-  </script>
-</body>
+      zoomImage.addEventListener("touchmove", (event) => {
+        event.preventDefault();
+
+        if (event.touches.length === 2) {
+          const newDistance = getDistanceBetweenFingers(event.touches);
+          zoomLevel = Math.min(Math.max(1, (newDistance / startDistance) * startZoomLevel), 4);
+
+          if (zoomLevel === 1) {
+            positionX = 0;
+            positionY = 0;
+          }
+        } else if (isDragging && event.touches.length === 1 && zoomLevel > 1) {
+          positionX = event.touches[0].clientX - startTouchX;
+          positionY = event.touches[0].clientY - startTouchY;
+        }
+
+        zoomImage.style.transform = `translate(${positionX}px, ${positionY}px) scale(${zoomLevel})`;
+      });
+    </script>
+  </body>
 </html>
